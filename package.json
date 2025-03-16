@@ -1,20 +1,17 @@
 {
-  "name": "backend-umembr",
+  "name": "backend-findmysecurity",
   "version": "1.0.0",
-  "description": "Backend for umembr app",
+  "description": "Backend for findmysecurity",
   "main": "index.js",
-  "scripts": {
-    "lint": "eslint . --ext .ts",
-    "test": "mocha --exit",
-    "start": "node dist/src/index.js",
-    "predev": "yarn run swagger",
-    "prebuild": "yarn run swagger",
-    "dev": "concurrently \"nodemon src/index.ts\" \"nodemon -x tsoa spec\"",
-    "build": "npx tsc",
-    "swagger": "tsoa spec",
-    "prisma-seed": "ts-node prisma/seed.ts"
-  },
-  "author": "decode9",
+"scripts": {
+  "lint": "eslint . --ext .ts",
+  "test": "mocha --exit",
+  "start": "node dist/src/index.js",
+  "dev": "nodemon src/index.ts",
+  "build": "npx tsc",
+  "prisma-seed": "ts-node prisma/seed.ts"
+},
+  "author": "bilal3940",
   "license": "MIT",
   "dependencies": {
     "@google-analytics/data": "^4.7.0",
