@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "Backend for findmysecurity",
   "main": "index.js",
-"scripts": {
-  "lint": "eslint . --ext .ts",
-  "test": "mocha --exit",
-  "start": "node dist/src/index.js",
-  "dev": "nodemon src/index.ts",
-  "build": "npx tsc",
-  "prisma-seed": "ts-node prisma/seed.ts"
-},
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "test": "mocha --exit",
+    "start": "node dist/src/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "npx tsc",
+    "prisma-seed": "ts-node prisma/seed.ts"
+  },
   "author": "bilal3940",
   "license": "MIT",
   "dependencies": {
@@ -56,7 +56,7 @@
     "mocha": "^10.2.0",
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.2"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
