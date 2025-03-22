@@ -3,9 +3,9 @@ import { server } from './bootstrap'
 import './routes'
 config()
 
-const { PORT } = process.env 
+const port = process.env.PORT || 3001
  
-server.listen(PORT, async () => {
-  console.log(`Server raised in port: ${PORT}`)
+server.listen(port, async () => {
+  console.log(`Server raised in port: ${port}`)
 })
 export default server
