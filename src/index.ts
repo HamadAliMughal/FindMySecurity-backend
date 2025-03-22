@@ -4,7 +4,7 @@ import './routes'
 config()
 
 const port = process.env.PORT || 4001;
-server.listen(PORT, async () => {
-  console.log(`Server raised in port: ${PORT}`)
+server.listen(port, async () => {
+  console.log(`Server raised in port: ${port}`)
 })
 export default server
