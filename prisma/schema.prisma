@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,75 +7,155 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                     Int                     @id @default(autoincrement())
-  email                  String                  @unique
-  password               String
-  roleId                 Int
-  role                   Role                    @relation("UserRole", fields: [roleId], references: [id]) // Named relation
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  roleUsers              RoleUser[]
-  individualProfessional IndividualProfessional? // For IndividualProfessional data
-  client                 Client?                 // For Client data (no extra fields)
-  securityCompany        SecurityCompany?        // For SecurityCompany data
-  courseProvider         CourseProvider?         // For CourseProvider data
+model Permission {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  roles     RolePermission[] // Change this to a join table
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  code      String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Role {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  permissions Permission[] @relation("RolePermissions")
-  users       User[]       @relation("UserRole") // Opposite relation name
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  RoleUser    RoleUser[]
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  permissions RolePermission[] // Change this to a join table
+  users       User[]           @relation("UserRole")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roleUsers   RoleUser[]
 }
 
-model Permission {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  roles     Role[]   @relation("RolePermissions")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  screenName  String?
+  phoneNumber String
+  dateOfBirth String?
+  address     String?
+  roleId      Int
+  role        Role     @relation("UserRole", fields: [roleId], references: [id]) // Named relation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  roleUsers              RoleUser[]
+  individualProfessional IndividualProfessional?
+  client                 Client?
+  securityCompany        SecurityCompany?
+  courseProvider         CourseProvider?
+  corporateClient        CorporateClient?
+  VerificationCode       VerificationCode?
 }
 
 model IndividualProfessional {
   id          Int      @id @default(autoincrement())
   userId      Int      @unique
   user        User     @relation(fields: [userId], references: [id])
-  profileData Json     // Profile data for Individual Professional
+  profileData Json
+  permissions Json? // Permissions stored as JSON
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Client {
-  id        Int        @id @default(autoincrement())
-  userId    Int        @unique
-  user      User       @relation(fields: [userId], references: [id])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  ClientAd  ClientAd[] // Optional relationship for Client Ads
+  id          Int        @id @default(autoincrement())
+  userId      Int        @unique
+  user        User       @relation(fields: [userId], references: [id])
+  permissions Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  ads         ClientAd[]
 }
 
 model SecurityCompany {
-  id          Int         @id @default(autoincrement())
-  userId      Int         @unique
-  user        User        @relation(fields: [userId], references: [id])
-  companyData Json       // Company data for SecurityCompany
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  ServiceAd   ServiceAd[] // Optional relationship for Security Company Ads
+  id                        Int         @id @default(autoincrement())
+  userId                    Int         @unique
+  user                      User        @relation(fields: [userId], references: [id])
+  companyName               String
+  registrationNumber        String
+  businessAddress           String
+  postCode                  String
+  contactPerson             String
+  jobTitle                  String
+  phoneNumber               String
+  website                   String?
+  servicesRequirements      Json? // Array of service requirements
+  securityServicesOfferings Json? // Array of offerings
+  permissions               Json?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  serviceAds                ServiceAd[]
 }
 
 model CourseProvider {
-  id           Int        @id @default(autoincrement())
-  userId       Int        @unique
-  user         User       @relation(fields: [userId], references: [id])
-  providerData Json       // Provider data for CourseProvider
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  CourseAd     CourseAd[] // Optional relationship for CourseProvider Ads
+  id                        Int        @id @default(autoincrement())
+  userId                    Int        @unique
+  user                      User       @relation(fields: [userId], references: [id])
+  companyName               String
+  registrationNumber        String
+  businessAddress           String
+  postCode                  String
+  contactPerson             String
+  jobTitle                  String
+  phoneNumber               String
+  website                   String?
+  servicesRequirements      Json?
+  securityServicesOfferings Json?
+  permissions               Json?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+  courseAds                 CourseAd[]
+}
+
+model CorporateClient {
+  id                  Int           @id @default(autoincrement())
+  userId              Int           @unique
+  user                User          @relation(fields: [userId], references: [id])
+  companyName         String
+  registrationNumber  String
+  address             String
+  postCode            String
+  industryType        String
+  contactPerson       String
+  jobTitle            String
+  phoneNumber         String
+  website             String?
+  serviceRequirements Json?
+  permissions         Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  corporateAds        CorporateAd[]
+}
+
+model CorporateAd {
+  id                Int             @id @default(autoincrement())
+  corporateClientId Int
+  corporateClient   CorporateClient @relation(fields: [corporateClientId], references: [id])
+  title             String
+  description       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 model CourseAd {
@@ -114,11 +192,8 @@ model RoleUser {
   id        Int      @id @default(autoincrement())
   roleId    Int
   userId    Int
-  validated Boolean? @default(false)
-  userType  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  role Role @relation(fields: [roleId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
