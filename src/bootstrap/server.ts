@@ -3,9 +3,9 @@ import express from 'express'
 import cors from 'cors'
 
 const server = express()
-setInterval(() => {
-  console.log(`Memory usage: ${JSON.stringify(process.memoryUsage())}`);
-}, 5000);
+// setInterval(() => {
+//   console.log(`Memory usage: ${JSON.stringify(process.memoryUsage())}`);
+// }, 5000);
 
 server.use(cors())
 server.use(express.json())

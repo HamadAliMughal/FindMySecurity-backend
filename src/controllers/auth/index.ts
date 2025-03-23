@@ -178,47 +178,47 @@ export default class Auth {
         return { code:verificationCode, message: "Verification code sent to your phone number" };
     }
 
-    // @Post("/login/verify")
-    // public async verifyCode(
-    //     @Body() req: { email: string; code: string }
-    // ): Promise<any> {
-    //     const user = await prisma.user.findFirst({
-    //         where: { email: req.email }
-    //     });
-    //     if (!user) throw new Error("Invalid email");
+    @Post("/login/verify")
+    public async verifyCode(
+        @Body() req: { email: string; code: string }
+    ): Promise<any> {
+        const user = await prisma.user.findFirst({
+            where: { email: req.email }
+        });
+        if (!user) throw new Error("Invalid email");
 
-    //     const verificationRecord = await prisma.verificationCode.findFirst({
-    //         where: { userId: user.id, code: req.code },
-    //     });
+        const verificationRecord = await prisma.verificationCode.findFirst({
+            where: { userId: user.id, code: req.code },
+        });
 
-    //     if (!verificationRecord || verificationRecord.expiresAt < new Date()) {
-    //         throw new Error("Invalid or expired verification code");
-    //     }
+        if (!verificationRecord || verificationRecord.expiresAt < new Date()) {
+            throw new Error("Invalid or expired verification code");
+        }
 
-    //     // Delete the verification record after use
-    //     await prisma.verificationCode.delete({ where: { id: verificationRecord.id } });
-    //     const role = await prisma.role.findUnique({
-    //         where: { id: Number(user?.roleId) },
-    //         include: { permissions: { include: { permission: true } } } // Fetch role permissions
-    //     });
+        // Delete the verification record after use
+        await prisma.verificationCode.delete({ where: { id: verificationRecord.id } });
+        const role = await prisma.role.findUnique({
+            where: { id: Number(user?.roleId) },
+            include: { permissions: { include: { permission: true } } } // Fetch role permissions
+        });
 
-    //     if (!role) throw new Error("Invalid role");
-    //     // Generate JWT token
-    //     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-    //         expiresIn: "168h",
-    //     });
+        if (!role) throw new Error("Invalid role");
+        // Generate JWT token
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+            expiresIn: "168h",
+        });
 
-    //     const returnUser: any = {
-    //         ...user, role: {
-    //             id: user?.roleId,
-    //             roleName: role?.name,
-    //             permissions: role.permissions.map((p) => p.permission.name),
-    //         },
-    //     };
-    //     if (returnUser.password) delete returnUser.password;
+        const returnUser: any = {
+            ...user, role: {
+                id: user?.roleId,
+                roleName: role?.name,
+                permissions: role.permissions.map((p) => p.permission.name),
+            },
+        };
+        if (returnUser.password) delete returnUser.password;
 
-    //     return { ...returnUser, token };
-    // }
+        return { ...returnUser, token };
+    }
 
 
 

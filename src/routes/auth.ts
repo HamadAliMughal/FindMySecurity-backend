@@ -25,11 +25,11 @@ export const registerRequest = async (req: Request, res: Response) => {
   }
 }
 export const verifyCode = async (req: Request, res: Response) => {
-//   try {
-//     const { email, code } = req.body;
-//     const response = await auth.verifyCode({ email, code });
-//     return res.status(200).json({ result: response })
-//   } catch (error: any) {
-//     return res.status(500).json({ error: error?.message })
-//   }
+  try {
+    const { email, code } = req.body;
+    const response = await auth.verifyCode({ email, code });
+    return res.status(200).json({ result: response })
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message })
+  }
 }
