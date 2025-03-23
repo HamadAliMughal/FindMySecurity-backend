@@ -3,7 +3,7 @@ import { Body, Post, Route, Tags } from "tsoa";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { LoginRequest } from "./types";
-import { sendVerificationSMS } from "../../utils/sendsms";
+// import { sendVerificationSMS } from "../../utils/sendsms";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "";
 
