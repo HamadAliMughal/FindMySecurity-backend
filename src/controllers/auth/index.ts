@@ -172,7 +172,7 @@ export default class Auth {
             create: { userId: user.id, code: verificationCode, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
         });
         // console.log("verification code", verificationCode)
-        await sendVerificationSMS('+923016623044', verificationCode);
+        // await sendVerificationSMS('+923016623044', verificationCode);
 
         return { code:verificationCode, message: "Verification code sent to your phone number" };
     }
