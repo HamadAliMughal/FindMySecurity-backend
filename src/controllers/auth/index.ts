@@ -2,9 +2,8 @@ import { prisma } from "../../bootstrap";
 import { Body, Post, Route, Tags } from "tsoa";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { randomInt } from "crypto";
-// import { sendVerificationSMS } from "../../utils/sendsms";
 import { LoginRequest } from "./types";
+import { sendVerificationSMS } from "../../utils/sendsms";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "";
 
@@ -173,7 +172,7 @@ export default class Auth {
             create: { userId: user.id, code: verificationCode, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
         });
         // console.log("verification code", verificationCode)
-        // await sendVerificationSMS('+923016623044', verificationCode);
+        await sendVerificationSMS('+923016623044', verificationCode);
 
         return { code:verificationCode, message: "Verification code sent to your phone number" };
     }
