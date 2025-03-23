@@ -1,13 +1,10 @@
 import twilio from "twilio";
-
-
+export async function sendVerificationSMS(userPhoneNumber: string, verificationCode: string): Promise<string> {
 const accountSid = process.env.TWILIO_ACCOUNT_SID as string;
 const authToken = process.env.TWILIO_AUTH_TOKEN as string;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER as string;
 
 const client = twilio(accountSid, authToken);
-
-export async function sendVerificationSMS(userPhoneNumber: string, verificationCode: string): Promise<string> {
   try {
     const message = await client.messages.create({
       body: `Your verification code is: ${verificationCode}`,

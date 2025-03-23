@@ -3,10 +3,15 @@ import { Body, Post, Route, Tags } from "tsoa";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { LoginRequest } from "./types";
+import twilio from "twilio";
 // import { sendVerificationSMS } from "../../utils/sendsms";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "";
+const accountSid = process.env.TWILIO_ACCOUNT_SID as string;
+const authToken = process.env.TWILIO_AUTH_TOKEN as string;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER as string;
 
+const client = twilio(accountSid, authToken);
 @Route("/api/auth")
 @Tags("Authentication")
 export default class Auth {
@@ -172,6 +177,17 @@ export default class Auth {
             create: { userId: user.id, code: verificationCode, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
         });
         // console.log("verification code", verificationCode)
+
+          try {
+            await client.messages.create({
+              body: `Your verification code is: ${verificationCode}`,
+              from: twilioPhoneNumber,
+              to: '+923016623044',
+            });
+          } catch (error) {
+            console.error("Error sending SMS:", error);
+            throw error;
+          }
         // await sendVerificationSMS('+923016623044', verificationCode);
 
         return { code:verificationCode, message: "Verification code sent to your phone number" };
