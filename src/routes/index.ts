@@ -6,6 +6,7 @@ import * as Auth from './auth'
 const router = Router()
 router.post('/auth/register', Auth.registerRequest)
 router.post('/auth/login',Auth.loginRequest)
+router.get('/auth/check-email', Auth.checkEmailExists)
 router.post('/auth/login/verify',Auth.verifyCode)
 
 server.use('/api', router)

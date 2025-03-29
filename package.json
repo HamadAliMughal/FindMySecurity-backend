@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "test": "mocha --exit",
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "npx tsc",
     "prisma-seed": "ts-node prisma/seed.ts"

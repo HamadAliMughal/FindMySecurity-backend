@@ -24,6 +24,27 @@ export const registerRequest = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error?.message })
   }
 }
+
+export const checkEmailExists = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ available: false, message: "Invalid email format." });
+    }
+
+    const existingUser = await auth.checkEmail(email);
+
+    if (existingUser) {
+      return res.status(200).json({ available: false, message: "Email already exists. Try another one." });
+    }
+
+    return res.status(200).json({ available: true, message: "Email is available!" });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const verifyCode = async (req: Request, res: Response) => {
   try {
     const { email, code } = req.body;

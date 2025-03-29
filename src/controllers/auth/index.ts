@@ -1,5 +1,5 @@
 import { prisma } from "../../bootstrap";
-import { Body, Post, Route, Tags } from "tsoa";
+import { Body, Get, Post, Query, Route, Tags } from "tsoa";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { LoginRequest } from "./types";
@@ -151,12 +151,22 @@ export default class Auth {
 
         return { ...result, token };
     }
+    @Get("/auth/check-email")
+    public async checkEmail(@Query("email") email: string): Promise<{ available: boolean; message?: string }> {
+        if (!email) return { available: false, message: "Email is required" };
 
+        const existingUser = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+        });
 
+        if (existingUser) {
+            return { available: false, message: "Email already exists. Try another one." };
+        }
 
-
+        return { available: true, message: "Email is available!" };
+    }
     @Post("/login")
-    public async loginUser(@Body() req: LoginRequest): Promise<{code: string, message: string }> {
+    public async loginUser(@Body() req: LoginRequest): Promise<{ code: string, message: string }> {
         const user = await prisma.user.findFirst({
             where: { email: req.email },
         });
@@ -178,19 +188,19 @@ export default class Auth {
         });
         // console.log("verification code", verificationCode)
 
-          try {
+        try {
             await client.messages.create({
-              body: `Your verification code is: ${verificationCode}`,
-              from: twilioPhoneNumber,
-              to: '+923016623044',
+                body: `Your verification code is: ${verificationCode}`,
+                from: twilioPhoneNumber,
+                to: '+923016623044',
             });
-          } catch (error) {
+        } catch (error) {
             console.error("Error sending SMS:", error);
             throw error;
-          }
+        }
         // await sendVerificationSMS('+923016623044', verificationCode);
 
-        return { code:verificationCode, message: "Verification code sent to your phone number" };
+        return { code: verificationCode, message: "Verification code sent to your phone number" };
     }
 
     @Post("/login/verify")
