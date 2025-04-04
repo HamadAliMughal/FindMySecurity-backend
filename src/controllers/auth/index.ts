@@ -151,7 +151,7 @@ export default class Auth {
 
         return { ...result, token };
     }
-    @Get("/auth/check-email")
+    @Get("/check-email")
     public async checkEmail(@Query("email") email: string): Promise<{ available: boolean; message?: string }> {
         if (!email) return { available: false, message: "Email is required" };
 
