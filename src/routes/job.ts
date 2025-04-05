@@ -16,7 +16,6 @@ export const getAllSecurityJobAdsRequest = async (req: Request, res: Response) =
         const response = await job.getAllSecurityJobAds();
         return res.status(200).json({ result: response });
     } catch (error: any) {
-        // Handle errors appropriately
         return res.status(500).json({ error: error?.message });
     }
 };
