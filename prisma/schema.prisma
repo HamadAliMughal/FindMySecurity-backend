@@ -169,14 +169,26 @@ model CourseAd {
 }
 
 model ServiceAd {
-  id                Int             @id @default(autoincrement())
-  securityCompanyId Int
-  securityCompany   SecurityCompany @relation(fields: [securityCompanyId], references: [id])
-  title             String
-  description       String
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  id                    Int      @id @default(autoincrement())
+  companyId            Int    
+  company              SecurityCompany @relation(fields: [companyId], references: [id])
+  jobTitle             String
+  jobType              String   
+  industryCategory     String
+  region               String
+  postcode             String
+  salaryRate           Float
+  salaryType           String   // Hourly, Daily, Annual
+  jobDescription       String   @db.Text
+  requiredExperience   String 
+  requiredLicences     String?
+  shiftAndHours        String?
+  startDate            DateTime?
+  deadline             DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
+
 
 model ClientAd {
   id          Int      @id @default(autoincrement())
