@@ -188,16 +188,16 @@ export default class Auth {
         });
         // console.log("verification code", verificationCode)
 
-        try {
-            await client.messages.create({
-                body: `Your verification code is: ${verificationCode}`,
-                from: twilioPhoneNumber,
-                to: '+923016623044',
-            });
-        } catch (error) {
-            console.error("Error sending SMS:", error);
-            throw error;
-        }
+        // try {
+        //     await client.messages.create({
+        //         body: `Your verification code is: ${verificationCode}`,
+        //         from: twilioPhoneNumber,
+        //         to: '+923016623044',
+        //     });
+        // } catch (error) {
+        //     console.error("Error sending SMS:", error);
+        //     throw error;
+        // }
         // await sendVerificationSMS('+923016623044', verificationCode);
 
         return { code: verificationCode, message: "Verification code sent to your phone number" };
