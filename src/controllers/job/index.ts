@@ -102,19 +102,5 @@ export default class Jobs {
         return { success: true, jobs };
     }
 
-    @Get("/{id}")
-    public async getSecurityJobAdById(@Path() id: number): Promise<{ success: boolean; jobAd?: any }> {
-        const jobAd = await prisma.serviceAd.findUnique({
-            where: { id },
-            include: {
-                company: true,
-            },
-        });
 
-        if (!jobAd) {
-            throw new Error("Job ad not found.");
-        }
-
-        return { success: true, jobAd };
-    }
 }
