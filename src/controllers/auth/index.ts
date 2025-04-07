@@ -18,139 +18,309 @@ export default class Auth {
 
     @Post("/register")
     public async registerUser(@Body() req: any): Promise<any> {
-        const { email, password, roleId, permissions, profileData, companyData, serviceRequirements, securityServicesOfferings, ...data } = req;
+    const { 
+        email, 
+        password, 
+        roleId, 
+        permissions, 
+        profileData, 
+        companyData, 
+        serviceRequirements, 
+        securityServicesOfferings, 
+        membershipPlan = 'basic', // Default to basic if not provided
+        ...userData 
+    } = req;
 
-        // Check if user already exists
-        const existingUser = await prisma.user.findFirst({ where: { email } });
-        if (existingUser) throw new Error("Email already exists");
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({ where: { email } });
+    if (existingUser) throw new Error("Email already exists");
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Validate role existence
-        const role = await prisma.role.findUnique({
-            where: { id: Number(roleId) },
-            include: { permissions: { include: { permission: true } } } // Fetch role permissions
+    // Validate role existence
+    const role = await prisma.role.findUnique({
+        where: { id: Number(roleId) },
+        include: { permissions: { include: { permission: true } } }
+    });
+    if (!role) throw new Error("Invalid role");
+
+    // Begin transaction to create user and related data
+    const result = await prisma.$transaction(async (tx) => {
+        // Create user
+        const user = await tx.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                roleId: Number(roleId),
+                ...userData, // firstName, lastName, etc.
+            },
         });
-        if (!role) throw new Error("Invalid role");
 
-        // Begin transaction to create user and related data
-        const result = await prisma.$transaction(async (tx) => {
-            // Create user
-            const user = await tx.user.create({
-                data: {
-                    email,
-                    password: hashedPassword,
-                    roleId: Number(roleId),
-                    ...data, // firstName, lastName, etc.
-                },
-            });
+        // Assign role to user in RoleUser table
+        await tx.roleUser.create({
+            data: {
+                userId: user.id,
+                roleId: role.id,
+            },
+        });
 
-            // Assign role to user in RoleUser table
-            await tx.roleUser.create({
-                data: {
-                    userId: user.id,
-                    roleId: role.id,
-                },
-            });
-
-            // Create role-specific entries
-            switch (role.name) {
-                case "Client":
-                    await tx.client.create({
-                        data: { userId: user.id, permissions: permissions || {} },
-                    });
-                    break;
-
-                case "IndividualProfessional":
-                    await tx.individualProfessional.create({
-                        data: { userId: user.id, profileData: profileData || {}, permissions: permissions || {} },
-                    });
-                    break;
-
-                case "SecurityCompany":
-                    await tx.securityCompany.create({
-                        data: {
-                            userId: user.id,
-                            companyName: companyData.companyName,
-                            registrationNumber: companyData.registrationNumber,
-                            businessAddress: companyData.businessAddress,
-                            postCode: companyData.postCode,
-                            contactPerson: companyData.contactPerson,
-                            jobTitle: companyData.jobTitle,
-                            phoneNumber: companyData.phoneNumber,
-                            website: companyData.website || null,
-                            servicesRequirements: serviceRequirements || [],
-                            securityServicesOfferings: securityServicesOfferings || [],
-                            permissions: permissions || {},
-                        },
-                    });
-                    break;
-
-                case "CourseProvider":
-                    await tx.courseProvider.create({
-                        data: {
-                            userId: user.id,
-                            companyName: companyData.companyName,
-                            registrationNumber: companyData.registrationNumber,
-                            businessAddress: companyData.businessAddress,
-                            postCode: companyData.postCode,
-                            contactPerson: companyData.contactPerson,
-                            jobTitle: companyData.jobTitle,
-                            phoneNumber: companyData.phoneNumber,
-                            website: companyData.website || null,
-                            servicesRequirements: serviceRequirements || [],
-                            securityServicesOfferings: securityServicesOfferings || [],
-                            permissions: permissions || {},
-                        },
-                    });
-                    break;
-
-                case "CorporateClient":
-                    await tx.corporateClient.create({
-                        data: {
-                            userId: user.id,
-                            companyName: companyData.companyName,
-                            registrationNumber: companyData.registrationNumber,
-                            address: companyData.address,
-                            postCode: companyData.postCode,
-                            industryType: companyData.industryType,
-                            contactPerson: companyData.contactPerson,
-                            jobTitle: companyData.jobTitle,
-                            phoneNumber: companyData.phoneNumber,
-                            website: companyData.website || null,
-                            serviceRequirements: serviceRequirements || [],
-                            permissions: permissions || {},
-                        },
-                    });
-                    break;
+        // Create membership record
+        await tx.membership.create({
+            data: {
+                userId: user.id,
+                plan: membershipPlan,
+                startDate: new Date(),
+                status: 'active',
+                // Add other membership fields as needed
             }
-
-            // Return user with role and permissions (excluding password)
-            return {
-                id: user.id,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                screenName: user.screenName,
-                phoneNumber: user?.phoneNumber,
-                dateOfBirth: user.dateOfBirth,
-                address: user.address,
-                role: {
-                    id: role.id,
-                    name: role.name,
-                    permissions: role.permissions.map((p) => p.permission.name),
-                },
-            };
         });
 
-        // Generate JWT token
-        const token = jwt.sign({ id: result.id, email: result.email }, JWT_SECRET, {
-            expiresIn: "168h",
-        });
+        // Create role-specific entries
+        switch (role.name) {
+            case "Client":
+                await tx.client.create({
+                    data: { 
+                        userId: user.id, 
+                        permissions: permissions || {},
+                        membershipPlan: membershipPlan // Optional: store in client table if needed
+                    },
+                });
+                break;
 
-        return { ...result, token };
-    }
+            case "IndividualProfessional":
+                await tx.individualProfessional.create({
+                    data: { 
+                        userId: user.id, 
+                        profileData: profileData || {}, 
+                        permissions: permissions || {},
+                        membershipPlan: membershipPlan // Optional
+                    },
+                });
+                break;
+
+            case "SecurityCompany":
+                await tx.securityCompany.create({
+                    data: {
+                        userId: user.id,
+                        companyName: companyData.companyName,
+                        registrationNumber: companyData.registrationNumber,
+                        businessAddress: companyData.businessAddress,
+                        postCode: companyData.postCode,
+                        contactPerson: companyData.contactPerson,
+                        jobTitle: companyData.jobTitle,
+                        phoneNumber: companyData.phoneNumber,
+                        website: companyData.website || null,
+                        servicesRequirements: serviceRequirements || [],
+                        securityServicesOfferings: securityServicesOfferings || [],
+                        permissions: permissions || {},
+                        membershipPlan: membershipPlan // Optional
+                    },
+                });
+                break;
+
+            case "CourseProvider":
+                await tx.courseProvider.create({
+                    data: {
+                        userId: user.id,
+                        companyName: companyData.companyName,
+                        registrationNumber: companyData.registrationNumber,
+                        businessAddress: companyData.businessAddress,
+                        postCode: companyData.postCode,
+                        contactPerson: companyData.contactPerson,
+                        jobTitle: companyData.jobTitle,
+                        phoneNumber: companyData.phoneNumber,
+                        website: companyData.website || null,
+                        servicesRequirements: serviceRequirements || [],
+                        securityServicesOfferings: securityServicesOfferings || [],
+                        permissions: permissions || {},
+                        membershipPlan: membershipPlan // Optional
+                    },
+                });
+                break;
+
+            case "CorporateClient":
+                await tx.corporateClient.create({
+                    data: {
+                        userId: user.id,
+                        companyName: companyData.companyName,
+                        registrationNumber: companyData.registrationNumber,
+                        address: companyData.address,
+                        postCode: companyData.postCode,
+                        industryType: companyData.industryType,
+                        contactPerson: companyData.contactPerson,
+                        jobTitle: companyData.jobTitle,
+                        phoneNumber: companyData.phoneNumber,
+                        website: companyData.website || null,
+                        serviceRequirements: serviceRequirements || [],
+                        permissions: permissions || {},
+                        membershipPlan: membershipPlan // Optional
+                    },
+                });
+                break;
+        }
+
+        // Return user with role, permissions, and membership info
+        return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            screenName: user.screenName,
+            phoneNumber: user?.phoneNumber,
+            dateOfBirth: user.dateOfBirth,
+            address: user.address,
+            membershipPlan: membershipPlan,
+            role: {
+                id: role.id,
+                name: role.name,
+                permissions: role.permissions.map((p) => p.permission.name),
+            },
+        };
+    });
+
+    // Generate JWT token
+    const token = jwt.sign({ id: result.id, email: result.email }, JWT_SECRET, {
+        expiresIn: "168h",
+    });
+
+    return { ...result, token };
+}
+    // @Post("/register")
+    // public async registerUser(@Body() req: any): Promise<any> {
+    //     const { email, password, roleId, permissions, profileData, companyData, serviceRequirements, securityServicesOfferings, ...data } = req;
+
+    //     // Check if user already exists
+    //     const existingUser = await prisma.user.findFirst({ where: { email } });
+    //     if (existingUser) throw new Error("Email already exists");
+
+    //     // Hash password
+    //     const hashedPassword = await bcrypt.hash(password, 10);
+
+    //     // Validate role existence
+    //     const role = await prisma.role.findUnique({
+    //         where: { id: Number(roleId) },
+    //         include: { permissions: { include: { permission: true } } } // Fetch role permissions
+    //     });
+    //     if (!role) throw new Error("Invalid role");
+
+    //     // Begin transaction to create user and related data
+    //     const result = await prisma.$transaction(async (tx) => {
+    //         // Create user
+    //         const user = await tx.user.create({
+    //             data: {
+    //                 email,
+    //                 password: hashedPassword,
+    //                 roleId: Number(roleId),
+    //                 ...data, // firstName, lastName, etc.
+    //             },
+    //         });
+
+    //         // Assign role to user in RoleUser table
+    //         await tx.roleUser.create({
+    //             data: {
+    //                 userId: user.id,
+    //                 roleId: role.id,
+    //             },
+    //         });
+
+    //         // Create role-specific entries
+    //         switch (role.name) {
+    //             case "Client":
+    //                 await tx.client.create({
+    //                     data: { userId: user.id, permissions: permissions || {} },
+    //                 });
+    //                 break;
+
+    //             case "IndividualProfessional":
+    //                 await tx.individualProfessional.create({
+    //                     data: { userId: user.id, profileData: profileData || {}, permissions: permissions || {} },
+    //                 });
+    //                 break;
+
+    //             case "SecurityCompany":
+    //                 await tx.securityCompany.create({
+    //                     data: {
+    //                         userId: user.id,
+    //                         companyName: companyData.companyName,
+    //                         registrationNumber: companyData.registrationNumber,
+    //                         businessAddress: companyData.businessAddress,
+    //                         postCode: companyData.postCode,
+    //                         contactPerson: companyData.contactPerson,
+    //                         jobTitle: companyData.jobTitle,
+    //                         phoneNumber: companyData.phoneNumber,
+    //                         website: companyData.website || null,
+    //                         servicesRequirements: serviceRequirements || [],
+    //                         securityServicesOfferings: securityServicesOfferings || [],
+    //                         permissions: permissions || {},
+    //                     },
+    //                 });
+    //                 break;
+
+    //             case "CourseProvider":
+    //                 await tx.courseProvider.create({
+    //                     data: {
+    //                         userId: user.id,
+    //                         companyName: companyData.companyName,
+    //                         registrationNumber: companyData.registrationNumber,
+    //                         businessAddress: companyData.businessAddress,
+    //                         postCode: companyData.postCode,
+    //                         contactPerson: companyData.contactPerson,
+    //                         jobTitle: companyData.jobTitle,
+    //                         phoneNumber: companyData.phoneNumber,
+    //                         website: companyData.website || null,
+    //                         servicesRequirements: serviceRequirements || [],
+    //                         securityServicesOfferings: securityServicesOfferings || [],
+    //                         permissions: permissions || {},
+    //                     },
+    //                 });
+    //                 break;
+
+    //             case "CorporateClient":
+    //                 await tx.corporateClient.create({
+    //                     data: {
+    //                         userId: user.id,
+    //                         companyName: companyData.companyName,
+    //                         registrationNumber: companyData.registrationNumber,
+    //                         address: companyData.address,
+    //                         postCode: companyData.postCode,
+    //                         industryType: companyData.industryType,
+    //                         contactPerson: companyData.contactPerson,
+    //                         jobTitle: companyData.jobTitle,
+    //                         phoneNumber: companyData.phoneNumber,
+    //                         website: companyData.website || null,
+    //                         serviceRequirements: serviceRequirements || [],
+    //                         permissions: permissions || {},
+    //                     },
+    //                 });
+    //                 break;
+    //         }
+
+    //         // Return user with role and permissions (excluding password)
+    //         return {
+    //             id: user.id,
+    //             email: user.email,
+    //             firstName: user.firstName,
+    //             lastName: user.lastName,
+    //             screenName: user.screenName,
+    //             phoneNumber: user?.phoneNumber,
+    //             dateOfBirth: user.dateOfBirth,
+    //             address: user.address,
+    //             role: {
+    //                 id: role.id,
+    //                 name: role.name,
+    //                 permissions: role.permissions.map((p) => p.permission.name),
+    //             },
+    //         };
+    //     });
+
+    //     // Generate JWT token
+    //     const token = jwt.sign({ id: result.id, email: result.email }, JWT_SECRET, {
+    //         expiresIn: "168h",
+    //     });
+
+    //     return { ...result, token };
+    // }
     @Get("/check-email")
     public async checkEmail(@Query("email") email: string): Promise<{ available: boolean; message?: string }> {
         if (!email) return { available: false, message: "Email is required" };

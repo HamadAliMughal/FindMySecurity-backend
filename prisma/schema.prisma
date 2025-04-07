@@ -209,3 +209,14 @@ model RoleUser {
   role      Role     @relation(fields: [roleId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
+
+
+model Membership {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  plan      String   // 'basic', 'standard', 'premium'
+  startDate DateTime
+  status    String   // 'active', 'inactive', etc.
+  @@unique([userId])
+}

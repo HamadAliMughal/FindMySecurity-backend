@@ -31,7 +31,7 @@
     "prisma": "^5.9.1",
     "swagger-ui-express": "^5.0.0",
     "tsoa": "^6.6.0",
-    "twilio": "^5.5.1"
+    "twilio": "^5.5.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
