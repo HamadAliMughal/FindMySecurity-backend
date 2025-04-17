@@ -34,7 +34,6 @@ export class SesService {
 
     try {
       const result = await this.ses.sendEmail(params).promise();
-      console.log('SES Email sent:', result.MessageId);
       return result;
     } catch (err) {
       console.error('SES Email error:', err);

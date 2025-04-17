@@ -17,7 +17,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sesService: SesService,
-  ) {}
+  ) { }
 
   async sendEmail(to: string) {
     const otpEmailHtml = `<p>Your verification code is: <strong>9345</strong></p>`;
@@ -39,7 +39,9 @@ export class AuthService {
     } = dto;
 
     const existingUser = await this.prisma.user.findFirst({ where: { email } });
-    if (existingUser) throw new BadRequestException('Email already exists');
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -47,31 +49,40 @@ export class AuthService {
       where: { id: Number(roleId) },
       include: { permissions: { include: { permission: true } } },
     });
-
     if (!role) throw new BadRequestException('Invalid role');
 
-    const user = await this.prisma.$transaction(async (tx) => {
+    const user = await this.prisma.$transaction(async (tx: any) => {
       const user = await tx.user.create({
         data: {
           email,
           password: hashedPassword,
           roleId: Number(roleId),
           validated: false,
-          ...data,
+          ...(data as any),
         },
       });
 
-      await tx.roleUser.create({ data: { userId: user.id, roleId: role.id } });
+      await tx.roleUser.create({
+        data: {
+          userId: user.id,
+          roleId: role.id,
+        },
+      });
+
+      let profile: any = null;
 
       switch (role.name) {
         case 'Client':
-          await tx.client.create({
-            data: { userId: user.id, permissions: permissions || {} },
+          profile = await tx.client.create({
+            data: {
+              userId: user.id,
+              permissions: permissions || {},
+            },
           });
           break;
 
         case 'IndividualProfessional':
-          await tx.individualProfessional.create({
+          profile = await tx.individualProfessional.create({
             data: {
               userId: user.id,
               profileData: profileData || {},
@@ -81,10 +92,10 @@ export class AuthService {
           break;
 
         case 'SecurityCompany':
-          await tx.securityCompany.create({
+          profile = await tx.securityCompany.create({
             data: {
               userId: user.id,
-              ...companyData,
+              ...(companyData as any),
               servicesRequirements: serviceRequirements || [],
               securityServicesOfferings: securityServicesOfferings || [],
               permissions: permissions || {},
@@ -93,10 +104,10 @@ export class AuthService {
           break;
 
         case 'CourseProvider':
-          await tx.courseProvider.create({
+          profile = await tx.courseProvider.create({
             data: {
               userId: user.id,
-              ...companyData,
+              ...(companyData as any),
               servicesRequirements: serviceRequirements || [],
               securityServicesOfferings: securityServicesOfferings || [],
               permissions: permissions || {},
@@ -105,10 +116,10 @@ export class AuthService {
           break;
 
         case 'CorporateClient':
-          await tx.corporateClient.create({
+          profile = await tx.corporateClient.create({
             data: {
               userId: user.id,
-              ...companyData,
+              ...(companyData as any),
               serviceRequirements: serviceRequirements || [],
               permissions: permissions || {},
             },
@@ -131,13 +142,11 @@ export class AuthService {
           name: role.name,
           permissions: role.permissions.map((p: any) => p.permission.name),
         },
+        profile,
       };
     });
 
-    // Optionally send verification code here if desired
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     await this.prisma.verificationCode.upsert({
       where: { userId: user.id },
@@ -151,10 +160,6 @@ export class AuthService {
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
     });
-
-
-
-    // Send OTP email via SES
     const otpEmailHtml = `<p>Your verification code is: <strong>${verificationCode}</strong></p>`;
     await this.sesService.sendEmail(user.email, 'Your OTP Code', otpEmailHtml);
 
@@ -168,6 +173,7 @@ export class AuthService {
       token,
     };
   }
+
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findFirst({
