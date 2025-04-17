@@ -1,0 +1,61 @@
+auth:
+  handler: src/lambda.handler
+  timeout: 30
+  role: !GetAtt LambdaRole.Arn
+  events:
+    - http:
+        method: POST
+        path: auth/sendEmail
+        cors: true
+    - http:
+        method: POST
+        path: auth/register
+        cors: true
+    - http:
+        method: GET
+        path: auth/check-email
+        cors: true
+    - http:
+        method: POST
+        path: auth/login
+        cors: true
+    - http:
+        method: POST
+        path: auth/login/verify
+        cors: true
+    - http:
+        method: GET
+        path: /auth/get-user/{id}
+        cors: true
+
+securityJobs:
+  handler: src/lambda.handler
+  timeout: 30
+  role: !GetAtt LambdaRole.Arn
+  events:
+    - http:
+        method: GET
+        path: security-jobs
+        cors: true
+    - http:
+        method: POST
+        path: security-jobs
+        cors: true
+    - http:
+        method: PUT
+        path: security-jobs/{id}
+        cors: true
+    - http:
+        method: DELETE
+        path: security-jobs/{id}
+        cors: true
+
+profile:
+  handler: src/lambda.handler
+  timeout: 30
+  role: !GetAtt LambdaRole.Arn
+  events:
+    - http:
+        method: PATCH
+        path: profile/individual/{id}
+        cors: true

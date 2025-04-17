@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
@@ -54,9 +55,10 @@ model User {
   dateOfBirth String?
   address     String?
   roleId      Int
-  role        Role     @relation("UserRole", fields: [roleId], references: [id]) // Named relation
+  role        Role     @relation("UserRole", fields: [roleId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  validated   Boolean  @default(false)
 
   // Relationships
   roleUsers              RoleUser[]
@@ -67,6 +69,7 @@ model User {
   corporateClient        CorporateClient?
   VerificationCode       VerificationCode?
 }
+
 
 model IndividualProfessional {
   id          Int      @id @default(autoincrement())
@@ -94,7 +97,7 @@ model SecurityCompany {
   user                      User        @relation(fields: [userId], references: [id])
   companyName               String
   registrationNumber        String
-  businessAddress           String
+  address                   String
   postCode                  String
   contactPerson             String
   jobTitle                  String
@@ -114,7 +117,7 @@ model CourseProvider {
   user                      User       @relation(fields: [userId], references: [id])
   companyName               String
   registrationNumber        String
-  businessAddress           String
+  address           String
   postCode                  String
   contactPerson             String
   jobTitle                  String
@@ -189,7 +192,6 @@ model ServiceAd {
   updatedAt            DateTime @updatedAt
 }
 
-
 model ClientAd {
   id          Int      @id @default(autoincrement())
   clientId    Int
@@ -208,6 +210,4 @@ model RoleUser {
   updatedAt DateTime @updatedAt
   role      Role     @relation(fields: [roleId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
-}
-
-
+} 

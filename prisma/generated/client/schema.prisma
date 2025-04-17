@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Permission {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  roles     RolePermission[] // Change this to a join table
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  code      String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  permissions RolePermission[] // Change this to a join table
+  users       User[]           @relation("UserRole")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roleUsers   RoleUser[]
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  screenName  String?
+  phoneNumber String
+  dateOfBirth String?
+  address     String?
+  roleId      Int
+  role        Role     @relation("UserRole", fields: [roleId], references: [id]) // Named relation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  roleUsers              RoleUser[]
+  individualProfessional IndividualProfessional?
+  client                 Client?
+  securityCompany        SecurityCompany?
+  courseProvider         CourseProvider?
+  corporateClient        CorporateClient?
+  VerificationCode       VerificationCode?
+}
+
+model IndividualProfessional {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id])
+  profileData Json
+  permissions Json? // Permissions stored as JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Client {
+  id          Int        @id @default(autoincrement())
+  userId      Int        @unique
+  user        User       @relation(fields: [userId], references: [id])
+  permissions Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  ads         ClientAd[]
+}
+
+model SecurityCompany {
+  id                        Int         @id @default(autoincrement())
+  userId                    Int         @unique
+  user                      User        @relation(fields: [userId], references: [id])
+  companyName               String
+  registrationNumber        String
+  address           String
+  postCode                  String
+  contactPerson             String
+  jobTitle                  String
+  phoneNumber               String
+  website                   String?
+  servicesRequirements      Json? // Array of service requirements
+  securityServicesOfferings Json? // Array of offerings
+  permissions               Json?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  serviceAds                ServiceAd[]
+}
+
+model CourseProvider {
+  id                        Int        @id @default(autoincrement())
+  userId                    Int        @unique
+  user                      User       @relation(fields: [userId], references: [id])
+  companyName               String
+  registrationNumber        String
+  address           String
+  postCode                  String
+  contactPerson             String
+  jobTitle                  String
+  phoneNumber               String
+  website                   String?
+  servicesRequirements      Json?
+  securityServicesOfferings Json?
+  permissions               Json?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+  courseAds                 CourseAd[]
+}
+
+model CorporateClient {
+  id                  Int           @id @default(autoincrement())
+  userId              Int           @unique
+  user                User          @relation(fields: [userId], references: [id])
+  companyName         String
+  registrationNumber  String
+  address             String
+  postCode            String
+  industryType        String
+  contactPerson       String
+  jobTitle            String
+  phoneNumber         String
+  website             String?
+  serviceRequirements Json?
+  permissions         Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  corporateAds        CorporateAd[]
+}
+
+model CorporateAd {
+  id                Int             @id @default(autoincrement())
+  corporateClientId Int
+  corporateClient   CorporateClient @relation(fields: [corporateClientId], references: [id])
+  title             String
+  description       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model CourseAd {
+  id               Int            @id @default(autoincrement())
+  courseProviderId Int
+  courseProvider   CourseProvider @relation(fields: [courseProviderId], references: [id])
+  title            String
+  description      String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model ServiceAd {
+  id                 Int             @id @default(autoincrement())
+  companyId          Int
+  company            SecurityCompany @relation(fields: [companyId], references: [id])
+  jobTitle           String
+  jobType            String
+  industryCategory   String
+  region             String
+  postcode           String
+  salaryRate         Float
+  salaryType         String // Hourly, Daily, Annual
+  jobDescription     String          @db.Text
+  requiredExperience String
+  requiredLicences   String?
+  shiftAndHours      String?
+  startDate          DateTime?
+  deadline           DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+}
+
+model ClientAd {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  client      Client   @relation(fields: [clientId], references: [id])
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RoleUser {
+  id        Int      @id @default(autoincrement())
+  roleId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      Role     @relation(fields: [roleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}

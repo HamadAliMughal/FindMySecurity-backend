@@ -1,7 +1,9 @@
+# Ignore build and dependency folders
 node_modules/
+.webpack/
+.serverless
+undefined
+
+# Ignore environment variable files
 .env
-.wwebjs*/
-*.pdf
-dist/
-swagger.json
-swagger.*
+.env.*
